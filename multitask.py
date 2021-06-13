@@ -23,8 +23,8 @@ class NonBlockingTimer(object):
   def next(self):
     """Returns true or false according to the following algorithm:
       if interval <= 0 raise RuntimeError
-      if status != RUNNING raise RuntimeError
-      if time.monotonic() - start_time > interval
+      if status != RUNNING return false
+      if status == RUNNING and time.monotonic() - start_time > interval
       return True and set start_time = time.monotonic()
       else return False """
 
@@ -32,18 +32,17 @@ class NonBlockingTimer(object):
       raise RuntimeError('Interval must be > 0')
 
     if self._status != NonBlockingTimer._RUNNING:
-      raise RuntimeError(
-          'Timer must be in state RUNNING before calling next()')
+      return False
 
-    current_time = time.monotonic()
-    elapsed = current_time - self._start_time
+    if self._status == NonBlockingTimer._RUNNING:
+        current_time = time.monotonic()
+        elapsed = current_time - self._start_time
 
-    if elapsed >= self._interval:
-      # The timer has been "triggered"
-      self._start_time = current_time
-      return True
-
-    return False
+        if elapsed >= self._interval:
+        # The timer has been "triggered"
+            self._start_time = current_time
+            return True
+        return False
 
   def stop(self):
     """Sets status to STOPPED. Do any cleanup here such as releasing pins,
@@ -73,27 +72,45 @@ class NonBlockingTimer(object):
 
 
 class BlinkDemo(NonBlockingTimer):
-  def __init__(self, index, color):
-    super(BlinkDemo, self).__init__(0.1)
-    self.index = index
-    self.color = color
-    cp.pixels[self.index] = self.color
-    cp.pixels.brightness = 0.05
-  def stop(self):
-    cp.pixels[self.index] = (0, 0, 0)
-  def next(self):
-    if (super(BlinkDemo, self).next()):
-        if cp.pixels[self.index] == (0, 0, 0):
-            cp.pixels[self.index] = self.color
-        else:
-            cp.pixels[self.index] = (0, 0, 0)
+    def __init__(self, interval, index, color):
+        super(BlinkDemo, self).__init__(interval)
+        self.index = index
+        self.color = color
+        cp.pixels[self.index] = self.color
+        cp.pixels.brightness = 0.05
+    def stop(self):
+        cp.pixels[self.index] = (0, 0, 0)
+        super(BlinkDemo, self).stop()
+    def next(self):
+        if (super(BlinkDemo, self).next()):
+            if cp.pixels[self.index] == (0, 0, 0):
+                cp.pixels[self.index] = self.color
+            else:
+                cp.pixels[self.index] = (0, 0, 0)
 
-blinkDemo = BlinkDemo(5, (255, 0, 0))
+class LongDemo(NonBlockingTimer):
+    def __init__(self, interval):
+        super(LongDemo, self).__init__(interval)
+    def stop(self):
+        return (super(LongDemo, self).stop())
+    def next(self):
+        return (super(LongDemo, self).next())
+
+blinkDemo = BlinkDemo(0.5, 5, (255, 0, 0))
+blinkDemo2 = BlinkDemo(0.1, 4, (0, 255, 0))
 blinkDemo.start()
+blinkDemo2.start()
+
+longDemo = LongDemo(10)
+longDemo.start()
 
 while True:
-    # cp.pixels[5] = (255, 0, 0)
     blinkDemo.next()
+    blinkDemo2.next()
+
+    if longDemo.next():
+        print("you're the bomb dot com")
+        longDemo.stop()
     # This is the only place you should use time.sleep: to set the overall
     # "sampling rate" of your program.
     time.sleep(0.001)
