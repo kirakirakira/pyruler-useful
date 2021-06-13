@@ -34,15 +34,14 @@ class NonBlockingTimer(object):
     if self._status != NonBlockingTimer._RUNNING:
       return False
 
-    if self._status == NonBlockingTimer._RUNNING:
-        current_time = time.monotonic()
-        elapsed = current_time - self._start_time
+    current_time = time.monotonic()
+    elapsed = current_time - self._start_time
 
-        if elapsed >= self._interval:
-        # The timer has been "triggered"
-            self._start_time = current_time
-            return True
-        return False
+    if elapsed >= self._interval:
+    # The timer has been "triggered"
+        self._start_time = current_time
+        return True
+    return False
 
   def stop(self):
     """Sets status to STOPPED. Do any cleanup here such as releasing pins,
@@ -98,6 +97,9 @@ class LongDemo(NonBlockingTimer):
 
 blinkDemo = BlinkDemo(0.5, 5, (255, 0, 0))
 blinkDemo2 = BlinkDemo(0.1, 4, (0, 255, 0))
+blinkDemo3 = BlinkDemo(0.75, 3, (0, 0, 255))
+blinkDemo4 = BlinkDemo(0.6, 2, (125, 125, 125))
+
 blinkDemo.start()
 blinkDemo2.start()
 
@@ -107,10 +109,17 @@ longDemo.start()
 while True:
     blinkDemo.next()
     blinkDemo2.next()
+    blinkDemo3.next()
+    blinkDemo4.next()
 
     if longDemo.next():
         print("you're the bomb dot com")
         longDemo.stop()
+        blinkDemo3.start()
+    
+    if cp.switch:
+        blinkDemo4.start()
+
     # This is the only place you should use time.sleep: to set the overall
     # "sampling rate" of your program.
     time.sleep(0.001)
