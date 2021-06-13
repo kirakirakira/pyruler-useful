@@ -8,11 +8,12 @@ class NonBlockingTimer(object):
   _STOPPED = 'STOPPED'
   _RUNNING = 'RUNNING'
 
-  def __init__(self, interval=-1):
+  def __init__(self, periodic, interval=-1):
     """Create a new timer with optional interval. Initial state is _STOPPED.
        Call start() to set status to RUNNING. """
     self._interval = interval
     self._status = NonBlockingTimer._STOPPED
+    self._periodic = periodic
     self._start_time = 0
 
   @property
@@ -40,6 +41,8 @@ class NonBlockingTimer(object):
     if elapsed >= self._interval:
     # The timer has been "triggered"
         self._start_time = current_time
+        if self._periodic:
+            self._status = NonBlockingTimer._STOPPED
         return True
     return False
 
@@ -72,7 +75,7 @@ class NonBlockingTimer(object):
 
 class BlinkDemo(NonBlockingTimer):
     def __init__(self, interval, index, color):
-        super(BlinkDemo, self).__init__(interval)
+        super(BlinkDemo, self).__init__(False, interval)
         self.index = index
         self.color = color
         cp.pixels[self.index] = self.color
@@ -89,7 +92,7 @@ class BlinkDemo(NonBlockingTimer):
 
 class LongDemo(NonBlockingTimer):
     def __init__(self, interval):
-        super(LongDemo, self).__init__(interval)
+        super(LongDemo, self).__init__(True, interval)
     def stop(self):
         return (super(LongDemo, self).stop())
     def next(self):
@@ -114,7 +117,6 @@ while True:
 
     if longDemo.next():
         print("you're the bomb dot com")
-        longDemo.stop()
         blinkDemo3.start()
     
     if cp.switch:
